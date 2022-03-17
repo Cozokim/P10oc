@@ -80,7 +80,7 @@ class BookingDialog(CancelAndHelpDialog):
         return await step_context.next(booking_details.destination)
 
     
-    # ==== Start Date ==== # 
+    # Departure Date 
     async def start_date_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """Prompt for departure date.
         This will use the DATE_RESOLVER_DIALOG."""
@@ -96,7 +96,7 @@ class BookingDialog(CancelAndHelpDialog):
         return await step_context.next(booking_details.start_date)
     
 
-    # ==== End Date ==== # 
+    # Return Date  
     async def end_date_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """Prompt for departure date.
         This will use the DATE_RESOLVER_DIALOG."""
@@ -138,7 +138,7 @@ class BookingDialog(CancelAndHelpDialog):
         # Capture the results of the previous step's prompt
         booking_details.budget = step_context.result
         
-        # YES / NO BOUTTON
+        # boutton yes/no
         msg = (
             f"Are you sure you to book a flight from { booking_details.origin } "
             f"to { booking_details.destination }, "
@@ -149,11 +149,10 @@ class BookingDialog(CancelAndHelpDialog):
         return await step_context.prompt(ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message))
 
     
-    # ==== Final ==== #
+    # Dialogue Final 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """Complete the interaction, track data, and end the dialog."""
 
-        # Create data to track in App Insights
         booking_details = step_context.options
 
         properties = {}
@@ -163,26 +162,21 @@ class BookingDialog(CancelAndHelpDialog):
         properties["return_date"] = booking_details.end_date
         properties["budget"] = booking_details.budget
         
-        # If the BOT is successful
         if step_context.result:
-            # Track YES data
-            self.telemetry_client.track_trace("YES answer", properties, "INFO")
+            self.telemetry_client.track_trace("accept", properties, "INFO")
             return await step_context.end_dialog(booking_details)
         
-        # If the BOT is NOT successful
         else:
-            # Send a "sorry" message to the user
-            sorry_msg = "Sorry i could not help you, please rephrase"
+            sorry_msg = "I'm really sorry that i couldn't help you :( "
             prompt_sorry_msg = MessageFactory.text(sorry_msg, sorry_msg, InputHints.ignoring_input)
             await step_context.context.send_activity(prompt_sorry_msg)
 
-            # Track NO data
-            self.telemetry_client.track_trace("NO answer", properties, "ERROR")
+            # Track error
+            self.telemetry_client.track_trace("refuse", properties, "ERROR") 
 
         return await step_context.end_dialog()
 
     
-    # ==== Ambiguous date ==== #
     def is_ambiguous(self, timex: str) -> bool:
         """Ensure time is correct."""
         

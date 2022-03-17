@@ -57,8 +57,8 @@ class MainDialog(ComponentDialog):
         msg = (
             str(step_context.options)
             if step_context.options
-            else "Hi there ! I am the FlyMe Chatbot ! I am here to assist you to book a flight ! " \
-                "What travel do you plan to do? ")
+            else "Hi there! I am the FlyMe Chatbot ! I'm here to assist you in your traveling plans. " \
+                "What travel do you have in mind?")
         
         prompt_message = MessageFactory.text(msg, msg, InputHints.expecting_input)
 
@@ -80,7 +80,7 @@ class MainDialog(ComponentDialog):
             return await step_context.begin_dialog(self._booking_dialog_id, luis_result)
 
         else:
-            didnt_understand_msg = ("Sorry, I did not understand. Please rephrase")
+            didnt_understand_msg = ("Sorry, I didn't get that. Please try asking in a different way")
             didnt_understand_message = MessageFactory.text(
                 didnt_understand_msg, didnt_understand_msg, InputHints.ignoring_input)
             await step_context.context.send_activity(didnt_understand_message)
@@ -88,15 +88,26 @@ class MainDialog(ComponentDialog):
         return await step_context.next(None)
 
     
-    # ==== End ==== 
+    # ==== Final Step ==== #
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-
+        # If the child dialog ("BookingDialog") was cancelled or the user failed to confirm,
+        # the Result here will be null.
         if step_context.result is not None:
             result = step_context.result
 
+            # Now we have all the booking details call the booking service.
+            # msg = (
+                # f"Your flight from {result.origin} to {result.destination} "
+                # f"at the rate of {result.budget} is booked : "
+                # f"Departure date on {result.start_date} - "
+                # f"Return date on {result.end_date}.")
+            # reformulation_msg = MessageFactory.text(msg, msg, InputHints.ignoring_input)
+            # await step_context.context.send_activity(reformulation_msg)
 
+            text1 = "Your flight is booked ! Bon voyage !"
+            return await step_context.replace_dialog(self.id, text1)
 
-        prompt_message = "Your flight is booked ! Bon voyage ! Do you wanna book another flight ?"
+        prompt_message = "What else can I do for you?"
         return await step_context.replace_dialog(self.id, prompt_message)
 
     
@@ -108,4 +119,28 @@ class MainDialog(ComponentDialog):
             string_temp = re.sub(pattern, str(data[key]), string_temp)
         return eval(string_temp)
 
- 
+    # Load attachment from file.
+    def create_adaptive_card_attachment(self, result):
+        """Create an adaptive card."""
+        
+        path =  "cards/bookedFlightCard.json"
+        with open(path) as card_file:
+            card = json.load(card_file)
+        
+        origin = result.origin
+        destination = result.destination
+        start_date = result.start_date
+        end_date = result.end_date
+        budget = result.budget
+
+        templateCard = {
+            "origin": origin, 
+            "destination": destination,
+            "start_date": start_date,
+            "end_date": end_date,
+            "budget": budget}
+
+        flightCard = self.replace(card, templateCard)
+
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive", content=flightCard)
