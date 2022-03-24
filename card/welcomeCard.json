@@ -21,7 +21,7 @@
       "type": "TextBlock",
       "size": "default",
       "isSubtle": "True",
-      "text": "Hi ! I'm the FlyMe Chatbot ! I am here to assist you on your holidays plans. Please say something to activate me",
+      "text": "Hi ! I am the FlyMe Chatbot ! I am here to assist you on your holidays plans. Please say something to activate me",
       "wrap": true,
       "maxLines": 0
     }
